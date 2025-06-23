@@ -26,7 +26,6 @@ def cross_validate_custom(train_x, train_y,input_model):
     recalls = []
     f1_scores = []
 
-    # kf = StratifiedKFold(n_splits=KFOLD_N_SPLITS, shuffle=True, random_state = RANDOM_STATE)
     kf = StratifiedKFold(n_splits=6, shuffle=True, random_state = RANDOM_STATE)
     for train_idx, val_idx in kf.split(train_x, train_y):
 
