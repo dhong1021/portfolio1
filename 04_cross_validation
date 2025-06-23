@@ -1,0 +1,85 @@
+df_train = train_data
+
+features = []
+
+df_train = df_train.drop(columns=df_train.columns[df_train.isna().any()].tolist(),axis=1)
+
+for col in df_train.columns:
+    try:
+        df_train[col] = df_train[col].astype(float)
+        features.append(col)
+    except:
+        continue
+
+train_data = df_train[features]
+
+features = [feature for feature in features if feature!='target']
+
+train_x = train_data[features]
+train_y = train_data['target']
+
+def cross_validate_custom(train_x, train_y,input_model):
+    print(input_model)
+    # 교차 검증을 수동으로 구현하기 위한 리스트 초기화
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1_scores = []
+
+    # kf = StratifiedKFold(n_splits=KFOLD_N_SPLITS, shuffle=True, random_state = RANDOM_STATE)
+    kf = StratifiedKFold(n_splits=6, shuffle=True, random_state = RANDOM_STATE)
+    for train_idx, val_idx in kf.split(train_x, train_y):
+
+        # 학습 데이터와 검증 데이터 분할
+        X_train, X_val = train_x.iloc[train_idx], train_x.iloc[val_idx]
+        y_train, y_val = train_y.iloc[train_idx], train_y.iloc[val_idx]
+
+        # print("before y_val normal/abnormal :",(y_val==0).sum(),'/',(y_val==1).sum())
+
+        # # 검증 데이터셋 비율 조정
+        # df_val = X_val.copy()
+        # df_val['target'] = y_val
+
+        # X_val = df_val[X_train.columns.to_list()]
+        # y_val = df_val['target']
+
+        # print("after y_val normal/abnormal :",(y_val==0).sum(),'/',(y_val==1).sum())
+
+        # insp_model = copy.deepcopy(input_model)
+        insp_model = input_model
+
+        # 오버샘플링된 학습 데이터로 모델 학습
+        insp_model.fit(X_train, y_train)
+
+        # 검증 데이터에 대한 예측
+        val_predictions = insp_model.predict(X_val)
+
+        # 성능 지표 계산
+        accuracies.append(accuracy_score(y_val, val_predictions))
+        precisions.append(precision_score(y_val, val_predictions))
+        recalls.append(recall_score(y_val, val_predictions))
+        f1_scores.append(f1_score(y_val, val_predictions))
+
+    # 교차 검증 - 개별 검증 결과
+    score_dict_01 = {
+        "accuracy of each Fold" : accuracies,
+        "precision of each Fold" : precisions,
+        "recall of each Fold" : recalls,
+        "F1 of each Fold" : f1_scores
+    }
+    df_score_01 = pd.DataFrame(score_dict_01)
+    display(df_score_01)
+
+    # 교차 검증 - 평균 검증 결과
+    score_dict_02 = {
+        "Metric": ["Mean accuracy", "Mean precision", "Mean recall", "Mean F1 score"],
+        "Score": [np.mean(accuracies), np.mean(precisions), np.mean(recalls), np.mean(f1_scores)]
+    }
+    df_score_02 = pd.DataFrame(score_dict_02)
+    display(df_score_02)
+
+# 정규화
+sc = StandardScaler()
+# sc = RobustScaler()
+train_x_std = sc.fit_transform(train_x)
+train_x_std = pd.DataFrame(train_x_std, columns=train_x.columns)
