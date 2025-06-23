@@ -1,6 +1,5 @@
 !gdown 14E744ijJgj2L8S_PgSsOFbUYUoTKWRit --output test.csv
 !gdown 1YhBYAKT-wS0UUWXPa03qVb3nCCfNr5Af --output train.csv
-!gdown 15_tFPK29AA0OoP7ScFgLqTtTqvMiRCMS --output submission.csv
 
 import os
 
