@@ -1,0 +1,31 @@
+!gdown 14E744ijJgj2L8S_PgSsOFbUYUoTKWRit --output test.csv
+!gdown 1YhBYAKT-wS0UUWXPa03qVb3nCCfNr5Af --output train.csv
+!gdown 15_tFPK29AA0OoP7ScFgLqTtTqvMiRCMS --output submission.csv
+
+import os
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+)
+from sklearn.model_selection import train_test_split, cross_val_score, cross_validate, KFold, StratifiedKFold
+from tqdm import tqdm
+
+
+# 추가
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import RobustScaler
+from sklearn.neighbors import KNeighborsClassifier
+
+from scipy import stats
+
+ROOT_DIR = ""
+RANDOM_STATE = 110
+NORMAL_RATIO_ = 1.0
+KFOLD_N_SPLITS = 6
+
