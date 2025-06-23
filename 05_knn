@@ -1,8 +1,0 @@
-# {'n_neighbors': 1, 'weights': 'distance', 'p': 2}
-
-# 3.	K-최근접 이웃(K-Nearest Neighbors, KNN)
-print("전처리 후 모든 컬럼 사용 - 정규화함")
-cross_validate_custom(train_x_std, train_y, KNeighborsClassifier(n_neighbors=1, weights='distance', p=2))
-
-#하이퍼파라미터 튜닝
-cross_validate_custom(train_x_std, train_y, KNeighborsClassifier(n_neighbors=1, weights='distance', p=1, metric='minkowski', algorithm='auto', leaf_size=40))
