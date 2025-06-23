@@ -1,0 +1,47 @@
+#파생변수 uni_receip 생성
+receip =[col for col in list(df_all) if 'Receip No Collect' in col]
+uni_receip = []
+for i in range(df_all.shape[0]):
+  x = df_all.iloc[i, df_all.columns.get_loc(receip[0])]
+  y = df_all.iloc[i, df_all.columns.get_loc(receip[1])]
+  z = df_all.iloc[i, df_all.columns.get_loc(receip[2])]
+  if x==y==z:
+    uni_receip.append(0)
+  else:
+    uni_receip.append(1)
+
+#df_all['uni_receip'] = uni_receip
+#df.insert(loc=idx, column='A', value=new_col)
+new_loc = df_all.shape[1] - 1
+df_all.insert(loc=new_loc, column='uni_receip', value=uni_receip)
+df_all.shape
+
+#파생변수 uni_Qty 생성
+barr = [
+ 'THICKNESS 1 Collect Result_Dam',
+ 'THICKNESS 2 Collect Result_Dam',
+ 'THICKNESS 3 Collect Result_Dam',
+ 'Production Qty Collect Result_Dam',
+ 'Production Qty Collect Result_Fill1',
+ 'Production Qty Collect Result_Fill2',
+ 'Receip No Collect Result_Dam',
+ 'Receip No Collect Result_Fill1',
+ 'Receip No Collect Result_Fill2',
+ 'WorkMode Collect Result_Fill1',
+ 'WorkMode Collect Result_Fill2']
+
+uni_Qty = []
+for i in range(df_all.shape[0]):
+  x = df_all.iloc[i, df_all.columns.get_loc(barr[3])]
+  y = df_all.iloc[i, df_all.columns.get_loc(barr[4])]
+  z = df_all.iloc[i, df_all.columns.get_loc(barr[5])]
+  if (max(x,y,z) - min(x,y,z)) > 0:
+    uni_Qty.append(1)
+  elif x>16:
+    uni_Qty.append(0.1)
+  else:
+    uni_Qty.append(0)
+
+new_loc = df_all.shape[1] - 1
+df_all.insert(loc=new_loc, column='uni_Qty', value=uni_Qty)
+df_all.shape
