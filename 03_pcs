@@ -1,0 +1,238 @@
+# 상관계수가 threshold 이상/이하 피처 그룹 찾기
+def find_groups_fixed_fixed(corr_matrix, threshold=1.0, greater_than_or_equal_to=True):
+    feature_name_list = corr_matrix.columns
+    group_set_list = []
+    group_list_for_return = []
+
+    # 각 컬럼을 정수로 표현
+    for feature_num in range(len(feature_name_list)):
+        group_set_list.append({feature_num})
+
+    for i in range(len(feature_name_list)//26):
+        insp_group = [g for g in group_set_list if (len(g) == (i+1))]
+
+        if len(insp_group) ==0:
+            break
+
+        for group in insp_group:
+            for feature_num in range(len(feature_name_list)):
+                if feature_num in group:
+                    continue
+
+                isok = True
+                for target_feature_num in group:
+                    if greater_than_or_equal_to:
+                        if corr_matrix.iloc[feature_num,target_feature_num] < threshold:
+                            isok = False
+                            break
+                    else:
+                        if corr_matrix.iloc[feature_num,target_feature_num] > threshold:
+                            isok = False
+                            break
+
+                if isok:
+                    new_group = group.copy()
+                    new_group.add(feature_num)
+
+                    if new_group not in group_set_list:
+                        group_set_list.append(new_group)
+
+    group_list_for_return = sorted(
+        [g for g in group_set_list if len(g) >= 2],
+        key=lambda s: (-len(s), sorted(s)),
+        reverse=False
+    )
+
+    group_list_for_return = [[feature_name_list[num] for num in s] for s in group_list_for_return]
+
+    # display('내부 정렬 전',group_list_for_return)
+
+    # 리스트 내부의 리스트 내부의 문자열을 사전 순으로 정렬
+    for sublist in group_list_for_return:
+        sublist.sort()
+
+    # display('내부 정렬 후',group_list_for_return)
+
+    # display('리스트 사이의 정렬 전',group_list_for_return)
+    # 리스트 내부의 리스트를 크기 기준으로 내림차순 정렬
+    group_list_for_return.sort(key=len, reverse=True)
+
+    # display('리스트 사이의 정렬 후',group_list_for_return)
+
+    print("그룹 개수",len(group_list_for_return))
+
+    # set_sizes = [len(s) for s in group_list_for_return]
+
+    # # 개수별 set 개수 계산
+    # set_size_counts = Counter(set_sizes)
+    # display(set_size_counts)
+
+    return group_list_for_return
+
+# 피처 그룹에서 중복된 피처 제거
+def remove_duplicate_features_by_group(X, correlated_groups):
+    columns_removed = set()
+    insped_removed = set()
+
+    for group in correlated_groups:
+        group = list(group)
+        drop_group = group[1:]
+
+        isok = True
+        for feature in group:
+            if feature in insped_removed:
+                isok = False
+                break
+
+        if isok:
+            X = X.drop(columns=drop_group)
+            columns_removed.update(drop_group)
+            insped_removed.update(group)
+
+    columns_removed = list(columns_removed)
+    display(columns_removed)
+
+    return X
+
+# 피처 그룹 제거 및 PCA 적용
+def remove_duplicate_features_with_pca(X, test_X, correlated_groups):
+    pca_components = {}
+    columns_removed = set()
+
+    X = X.copy()
+    test_X = test_X.copy()
+
+    for group in correlated_groups:
+        group = list(group)
+
+        isok = False
+        for feature in group:
+            if feature in columns_removed:
+                isok = True
+                break
+
+        if isok:
+            continue
+
+        # 데이터를 표준화
+        scaler = StandardScaler()
+        # scaler = RobustScaler()
+        X_scaled = scaler.fit_transform(X[group])
+
+        # 학습 데이터에 PCA 적용
+        pca = PCA(n_components=1, random_state=RANDOM_STATE)
+        X_pca = pca.fit_transform(X_scaled)
+
+        # PCA 모델 저장
+        component_name = "_".join(group) + "_PCA"
+
+        X.loc[:, component_name] = X_pca  # 수정된 부분
+
+        # 테스트 데이터에 동일한 PCA 변환 적용
+        X_test_scaled = scaler.transform(test_X[group])
+        X_test_pca = pca.transform(X_test_scaled)
+
+        test_X.loc[:, component_name] = X_test_pca  # 수정된 부분
+
+        # 기존의 그룹 피처들 제거
+        X = X.drop(columns=group)
+        test_X = test_X.drop(columns=group)
+
+        pca_components[component_name] = group
+        columns_removed.update(group)
+
+    print("PCA로 대체된 피처 그룹들:", pca_components.keys())
+
+    return X, test_X
+
+# 상관계수가 |임계점| 이상에 해당하는 컬럼들 그룹화 후 전처리 수행
+def insp_duplicated_corr(train_data, test_data, threshold=1.0, is_pca=True):
+    features = train_data.columns.tolist()
+    features = [feature for feature in features if feature != 'target']
+    X = train_data[features]
+    y = train_data['target']
+    test_X =test_data[features]
+
+    # 상관계수가 threshold 이상인 피처 그룹 찾기
+    correlation_X = X.corr()
+    correlated_groups_01 = find_groups_fixed_fixed(correlation_X, threshold, True)
+    # correlated_groups_01 = find_groups_fixed_fixed(correlation_X, threshold, True)
+
+    if is_pca:
+        # 각 그룹별 pca 적용
+        X, test_X = remove_duplicate_features_with_pca(X, test_X, correlated_groups_01)
+    else:
+        # 각 그룹별 하나만 남기고 drop
+        X = remove_duplicate_features_by_group(X, correlated_groups_01)
+        test_X = remove_duplicate_features_by_group(test_X, correlated_groups_01)
+
+
+    # 상관계수가 threshold 이하인 피처 그룹 찾기
+    correlation_X = X.corr()
+    correlated_groups_02 = find_groups_fixed_fixed(correlation_X, -threshold, False)
+    # correlated_groups_02 = find_groups_fixed_fixed(correlation_X, -threshold, False)
+
+    if is_pca:
+        # 각 그룹별 pca 적용
+        X, test_X = remove_duplicate_features_with_pca(X, test_X, correlated_groups_02)
+    else:
+        # 각 그룹별 하나만 남기고 drop
+        X = remove_duplicate_features_by_group(X, correlated_groups_02)
+        test_X = remove_duplicate_features_by_group(test_X, correlated_groups_02)
+
+    X['target'] = y
+    train_data = X
+
+    # print("임계치 이상에서 PCA로 대체된 피처 그룹들:", pca_components_02.keys())
+
+    return train_data, test_X
+
+
+print("상관계수 전처리 이전 개수",len(train_data.columns))
+# 상관계수가 임계값 이상인 컬럼 그룹을 PCA로 대체 (테스트 데이터 포함)
+train_data, test_data = insp_duplicated_corr(train_data, test_data, 1.0,False)
+train_data, test_data = insp_duplicated_corr(train_data, test_data, 0.99,False)
+
+train_data, test_data = insp_duplicated_corr(train_data, test_data, 0.97,True)
+
+print("상관계수 전처리 이후 개수",len(train_data.columns))
+
+###
+
+# 이상치 고려 O
+df_train = train_data
+
+features = []
+
+df_train = df_train.drop(columns=df_train.columns[df_train.isna().any()].tolist(),axis=1)
+
+for col in df_train.columns:
+    try:
+        df_train[col] = df_train[col].astype(float)
+        features.append(col)
+    except:
+        continue
+
+X = df_train[features]
+
+train_data = df_train
+
+# Z-score 기반 이상치 제거
+
+# 16가지 이상의 값을 가지고 있는 대상만 이상치 검증 수행
+filtered_feature = (train_data.nunique()>=100)
+filtered_feature = filtered_feature[filtered_feature].index
+display(len(filtered_feature))
+display(train_data.nunique().sort_values(ascending=False).head(45))
+
+# Z-score 기반 이상치 제거
+z_scores = np.abs(stats.zscore(X[filtered_feature]))
+
+threshold = 3  # 이 값을 조절하여 이상치로 간주되는 임계점을 설정합니다.
+train_zscore = train_data.copy()[(z_scores < threshold).all(axis=1)]
+
+display(f"z_score 기반의 이상치 제거한 갯수 : {len(train_data) - len(train_zscore)} 개, 비율 : {(len(train_data) - len(train_zscore))/len(train_data) * 100.0}")
+display(f"z_score 기반의 이상치 제거한 AbNormal 비율 : {((train_data['target']==1).sum() - (train_zscore['target']==1).sum())/(train_data['target']==1).sum() * 100.0}")
+display(f"z_score 기반의 이상치 제거한 Normal 비율 : {((train_data['target']==0).sum() - (train_zscore['target']==0).sum())/(train_data['target']==0).sum() * 100.0}")
+
+train_data = train_zscore
