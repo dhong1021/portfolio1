@@ -158,6 +158,19 @@ def do_data_preprocessing_04_for_test(df):
 
         df[feature] = df[feature].fillna(0)
 
+# 데이터 불러오기 및 전처리 수행
+train_data = pd.read_csv(os.path.join(ROOT_DIR, "train.csv"))
+train_data['target'] = train_data['target'].apply(lambda x: 1 if x == "AbNormal" else 0)
+
+test_data = pd.read_csv(os.path.join(ROOT_DIR, "test.csv"))
+
+train_data = do_data_preprocessing_01(train_data)
+train_data = do_data_preprocessing_02(train_data)
+train_data = do_data_preprocessing_04(train_data)
+
+test_data = do_data_preprocessing_01(test_data)
+test_data = do_data_preprocessing_02(test_data)
+test_data = do_data_preprocessing_04_for_test(test_data)
     return df
 
 train_data = pd.read_csv(os.path.join(ROOT_DIR, "train.csv"))
