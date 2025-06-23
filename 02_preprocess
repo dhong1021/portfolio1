@@ -1,0 +1,164 @@
+# 파생 변수 생성
+def create_is_the_equipment_inconsistent_feature(row):
+    if (row['Equipment_Dam'] == 'Dam dispenser #1' and
+        row['Equipment_Fill1'] == 'Fill1 dispenser #1' and
+        row['Equipment_Fill2'] == 'Fill2 dispenser #1'):
+        return 0
+    elif (row['Equipment_Dam'] == 'Dam dispenser #2' and
+        row['Equipment_Fill1'] == 'Fill1 dispenser #2' and
+        row['Equipment_Fill2'] == 'Fill2 dispenser #2'):
+        return 0
+    else:
+        return 1
+
+# # 공통 features 분석 내용을 반영한 전처리 코드와 OK, NG, NaN 분석 내용을 반영한 전처리 코드 통합 메소드
+def do_data_preprocessing_01(df):
+    # 3장
+
+    # 제거할 공통 feature들
+    features_00 = [
+        # Wip Line
+        'Wip Line_Dam','Wip Line_AutoClave','Wip Line_Fill1','Wip Line_Fill2',
+        # Process Desc.
+        'Process Desc._Dam','Process Desc._AutoClave','Process Desc._Fill1','Process Desc._Fill2',
+        # Equipment
+        'Equipment_Dam','Equipment_AutoClave','Equipment_Fill1','Equipment_Fill2',
+        # Model.Suffix
+        'Model.Suffix_Dam','Model.Suffix_AutoClave','Model.Suffix_Fill1','Model.Suffix_Fill2',
+        # Workorder
+        'Workorder_Dam','Workorder_AutoClave','Workorder_Fill1','Workorder_Fill2',
+        # Insp. Seq No.
+        'Insp. Seq No._Dam','Insp. Seq No._AutoClave','Insp. Seq No._Fill1','Insp. Seq No._Fill2',
+        # Insp Judge Code_Fill2
+        'Insp Judge Code_Dam','Insp Judge Code_AutoClave','Insp Judge Code_Fill1','Insp Judge Code_Fill2',
+    ]
+    # Model.Suffix 컬럼 하나는 남겨두기
+    df.loc[:,'Model.Suffix'] = df['Model.Suffix_Dam']
+    # df.loc[:,'Equipment'] = df['Equipment_Dam']
+    df['Is_the_equipment#_inconsistent'] = df.apply(create_is_the_equipment_inconsistent_feature, axis=1)
+
+    df = df.drop(columns=features_00, axis=1)
+
+    # Model.Suffix 열의 범주형 데이터 값들
+    values_to_convert = {
+        # Model.Suffix
+        'AJX75334501':'1',
+        'AJX75334502':'2',
+        'AJX75334503':'3',
+        'AJX75334505':'5',
+        'AJX75334506':'6',
+        'AJX75334507':'7',
+        'AJX75334508':'8'
+    }
+
+    # df[columns_to_convert] = df[columns_to_convert].astype(int)
+    df['Model.Suffix'] = df['Model.Suffix'].replace(values_to_convert).astype(float)
+
+    # 4장
+
+    # NaN 없이, OK으로만 이루어진 칼럼 -> drop
+    features_01 = [
+        'Insp Judge Code_Dam', 'Insp Judge Code_AutoClave',
+        '1st Pressure Judge Value_AutoClave',
+        '2nd Pressure Judge Value_AutoClave',
+        '3rd Pressure Judge Value_AutoClave', 'Insp Judge Code_Fill1',
+        'Insp Judge Code_Fill2'
+    ]
+    df = df.drop(columns=features_01,axis=1,errors='ignore')
+
+    # NaN만으로 이루어진 칼럼 -> drop
+    features_02 = [
+        'CURE END POSITION X Unit Time_Dam','CURE END POSITION X Judge Value_Dam','CURE END POSITION Z Unit Time_Dam','CURE END POSITION Z Judge Value_Dam','CURE END POSITION Θ Unit Time_Dam','CURE END POSITION Θ Judge Value_Dam','CURE SPEED Unit Time_Dam','CURE SPEED Judge Value_Dam','CURE STANDBY POSITION X Unit Time_Dam','CURE STANDBY POSITION X Judge Value_Dam','CURE STANDBY POSITION Z Unit Time_Dam','CURE STANDBY POSITION Z Judge Value_Dam','CURE STANDBY POSITION Θ Unit Time_Dam','CURE STANDBY POSITION Θ Judge Value_Dam','CURE START POSITION X Unit Time_Dam','CURE START POSITION X Judge Value_Dam','CURE START POSITION Z Unit Time_Dam','CURE START POSITION Z Judge Value_Dam','CURE START POSITION Θ Unit Time_Dam','CURE START POSITION Θ Judge Value_Dam','DISCHARGED SPEED OF RESIN Unit Time_Dam','DISCHARGED SPEED OF RESIN Judge Value_Dam','DISCHARGED TIME OF RESIN(Stage1) Unit Time_Dam','DISCHARGED TIME OF RESIN(Stage1) Judge Value_Dam','DISCHARGED TIME OF RESIN(Stage2) Unit Time_Dam','DISCHARGED TIME OF RESIN(Stage2) Judge Value_Dam','DISCHARGED TIME OF RESIN(Stage3) Unit Time_Dam','DISCHARGED TIME OF RESIN(Stage3) Judge Value_Dam','Dispense Volume(Stage1) Unit Time_Dam','Dispense Volume(Stage1) Judge Value_Dam','Dispense Volume(Stage2) Unit Time_Dam','Dispense Volume(Stage2) Judge Value_Dam','Dispense Volume(Stage3) Unit Time_Dam','Dispense Volume(Stage3) Judge Value_Dam','HEAD NORMAL COORDINATE X AXIS(Stage1) Unit Time_Dam','HEAD NORMAL COORDINATE X AXIS(Stage2) Unit Time_Dam','HEAD NORMAL COORDINATE X AXIS(Stage2) Judge Value_Dam','HEAD NORMAL COORDINATE X AXIS(Stage3) Unit Time_Dam','HEAD NORMAL COORDINATE X AXIS(Stage3) Judge Value_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage1) Unit Time_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage1) Judge Value_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage2) Unit Time_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage2) Judge Value_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage3) Unit Time_Dam','HEAD NORMAL COORDINATE Y AXIS(Stage3) Judge Value_Dam','HEAD NORMAL COORDINATE Z AXIS(Stage1) Unit Time_Dam','HEAD NORMAL COORDINATE Z AXIS(Stage1) Judge Value_Dam','HEAD NORMAL COORDINATE Z AXIS(Stage2) Unit Time_Dam','HEAD NORMAL COORDINATE Z AXIS(Stage2) Judge Value_Dam','HEAD NORMAL COORDINATE Z AXIS(Stage3) Unit Time_Dam',
+        'HEAD NORMAL COORDINATE Z AXIS(Stage3) Judge Value_Dam','HEAD Standby Position X Unit Time_Dam','HEAD Standby Position X Judge Value_Dam','HEAD Standby Position Y Unit Time_Dam','HEAD Standby Position Y Judge Value_Dam','HEAD Standby Position Z Unit Time_Dam','HEAD Standby Position Z Judge Value_Dam','Head Clean Position X Unit Time_Dam','Head Clean Position X Judge Value_Dam','Head Clean Position Y Unit Time_Dam','Head Clean Position Y Judge Value_Dam','Head Clean Position Z Unit Time_Dam','Head Clean Position Z Judge Value_Dam','Head Purge Position X Unit Time_Dam','Head Purge Position X Judge Value_Dam','Head Purge Position Y Unit Time_Dam','Head Purge Position Y Judge Value_Dam','Head Purge Position Z Unit Time_Dam','Head Purge Position Z Judge Value_Dam','Head Zero Position X Unit Time_Dam','Head Zero Position X Judge Value_Dam','Head Zero Position Y Unit Time_Dam','Head Zero Position Y Judge Value_Dam','Head Zero Position Z Unit Time_Dam','Head Zero Position Z Judge Value_Dam','Machine Tact time Unit Time_Dam','Machine Tact time Judge Value_Dam','PalletID Unit Time_Dam','PalletID Judge Value_Dam','Production Qty Unit Time_Dam','Production Qty Judge Value_Dam','Receip No Unit Time_Dam','Receip No Judge Value_Dam','Stage1 Circle1 Distance Speed Unit Time_Dam','Stage1 Circle1 Distance Speed Judge Value_Dam','Stage1 Circle2 Distance Speed Unit Time_Dam','Stage1 Circle2 Distance Speed Judge Value_Dam','Stage1 Circle3 Distance Speed Unit Time_Dam','Stage1 Circle3 Distance Speed Judge Value_Dam','Stage1 Circle4 Distance Speed Unit Time_Dam','Stage1 Circle4 Distance Speed Judge Value_Dam','Stage1 Line1 Distance Speed Unit Time_Dam','Stage1 Line1 Distance Speed Judge Value_Dam','Stage1 Line2 Distance Speed Unit Time_Dam','Stage1 Line2 Distance Speed Judge Value_Dam','Stage1 Line3 Distance Speed Unit Time_Dam','Stage1 Line3 Distance Speed Judge Value_Dam','Stage1 Line4 Distance Speed Unit Time_Dam','Stage1 Line4 Distance Speed Judge Value_Dam','Stage2 Circle1 Distance Speed Unit Time_Dam','Stage2 Circle1 Distance Speed Judge Value_Dam','Stage2 Circle2 Distance Speed Unit Time_Dam','Stage2 Circle2 Distance Speed Judge Value_Dam','Stage2 Circle3 Distance Speed Unit Time_Dam','Stage2 Circle3 Distance Speed Judge Value_Dam',
+        'Stage2 Circle4 Distance Speed Unit Time_Dam','Stage2 Circle4 Distance Speed Judge Value_Dam','Stage2 Line1 Distance Speed Unit Time_Dam','Stage2 Line1 Distance Speed Judge Value_Dam','Stage2 Line2 Distance Speed Unit Time_Dam','Stage2 Line2 Distance Speed Judge Value_Dam','Stage2 Line3 Distance Speed Unit Time_Dam','Stage2 Line3 Distance Speed Judge Value_Dam','Stage2 Line4 Distance Speed Unit Time_Dam','Stage2 Line4 Distance Speed Judge Value_Dam','Stage3 Circle1 Distance Speed Unit Time_Dam','Stage3 Circle1 Distance Speed Judge Value_Dam','Stage3 Circle2 Distance Speed Unit Time_Dam','Stage3 Circle2 Distance Speed Judge Value_Dam','Stage3 Circle3 Distance Speed Unit Time_Dam','Stage3 Circle3 Distance Speed Judge Value_Dam','Stage3 Circle4 Distance Speed Unit Time_Dam','Stage3 Circle4 Distance Speed Judge Value_Dam','Stage3 Line1 Distance Speed Unit Time_Dam','Stage3 Line1 Distance Speed Judge Value_Dam','Stage3 Line2 Distance Speed Unit Time_Dam','Stage3 Line2 Distance Speed Judge Value_Dam','Stage3 Line3 Distance Speed Unit Time_Dam','Stage3 Line3 Distance Speed Judge Value_Dam','Stage3 Line4 Distance Speed Unit Time_Dam','Stage3 Line4 Distance Speed Judge Value_Dam','THICKNESS 1 Unit Time_Dam','THICKNESS 1 Judge Value_Dam','THICKNESS 2 Unit Time_Dam','THICKNESS 2 Judge Value_Dam','THICKNESS 3 Unit Time_Dam','THICKNESS 3 Judge Value_Dam','WorkMode Unit Time_Dam','WorkMode Judge Value_Dam','GMES_ORIGIN_INSP_JUDGE_CODE Unit Time_AutoClave','DISCHARGED SPEED OF RESIN Unit Time_Fill1','DISCHARGED SPEED OF RESIN Judge Value_Fill1','DISCHARGED TIME OF RESIN(Stage1) Unit Time_Fill1','DISCHARGED TIME OF RESIN(Stage1) Judge Value_Fill1','DISCHARGED TIME OF RESIN(Stage2) Unit Time_Fill1','DISCHARGED TIME OF RESIN(Stage2) Judge Value_Fill1','DISCHARGED TIME OF RESIN(Stage3) Unit Time_Fill1','DISCHARGED TIME OF RESIN(Stage3) Judge Value_Fill1','Dispense Volume(Stage1) Unit Time_Fill1','Dispense Volume(Stage1) Judge Value_Fill1','Dispense Volume(Stage2) Unit Time_Fill1','Dispense Volume(Stage2) Judge Value_Fill1','Dispense Volume(Stage3) Unit Time_Fill1','Dispense Volume(Stage3) Judge Value_Fill1','HEAD NORMAL COORDINATE X AXIS(Stage1) Unit Time_Fill1','HEAD NORMAL COORDINATE X AXIS(Stage2) Unit Time_Fill1',
+        'HEAD NORMAL COORDINATE X AXIS(Stage2) Judge Value_Fill1','HEAD NORMAL COORDINATE X AXIS(Stage3) Unit Time_Fill1','HEAD NORMAL COORDINATE X AXIS(Stage3) Judge Value_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage1) Unit Time_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage1) Judge Value_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage2) Unit Time_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage2) Judge Value_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage3) Unit Time_Fill1','HEAD NORMAL COORDINATE Y AXIS(Stage3) Judge Value_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage1) Unit Time_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage1) Judge Value_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage2) Unit Time_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage2) Judge Value_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage3) Unit Time_Fill1','HEAD NORMAL COORDINATE Z AXIS(Stage3) Judge Value_Fill1','HEAD Standby Position X Unit Time_Fill1','HEAD Standby Position X Judge Value_Fill1','HEAD Standby Position Y Unit Time_Fill1','HEAD Standby Position Y Judge Value_Fill1','HEAD Standby Position Z Unit Time_Fill1','HEAD Standby Position Z Judge Value_Fill1','Head Clean Position X Unit Time_Fill1','Head Clean Position X Judge Value_Fill1','Head Clean Position Y Unit Time_Fill1','Head Clean Position Y Judge Value_Fill1','Head Clean Position Z Unit Time_Fill1','Head Clean Position Z Judge Value_Fill1','Head Purge Position X Unit Time_Fill1','Head Purge Position X Judge Value_Fill1','Head Purge Position Y Unit Time_Fill1','Head Purge Position Y Judge Value_Fill1','Head Purge Position Z Unit Time_Fill1','Head Purge Position Z Judge Value_Fill1','Machine Tact time Unit Time_Fill1','Machine Tact time Judge Value_Fill1','PalletID Unit Time_Fill1','PalletID Judge Value_Fill1','Production Qty Unit Time_Fill1','Production Qty Judge Value_Fill1','Receip No Unit Time_Fill1','Receip No Judge Value_Fill1','WorkMode Unit Time_Fill1','WorkMode Judge Value_Fill1','CURE END POSITION X Unit Time_Fill2','CURE END POSITION X Judge Value_Fill2','CURE END POSITION Z Unit Time_Fill2','CURE END POSITION Z Judge Value_Fill2','CURE END POSITION Θ Unit Time_Fill2','CURE END POSITION Θ Judge Value_Fill2','CURE SPEED Unit Time_Fill2','CURE SPEED Judge Value_Fill2','CURE STANDBY POSITION X Unit Time_Fill2',
+        'CURE STANDBY POSITION X Judge Value_Fill2','CURE STANDBY POSITION Z Unit Time_Fill2','CURE STANDBY POSITION Z Judge Value_Fill2','CURE STANDBY POSITION Θ Unit Time_Fill2','CURE STANDBY POSITION Θ Judge Value_Fill2','CURE START POSITION X Unit Time_Fill2','CURE START POSITION X Judge Value_Fill2','CURE START POSITION Z Unit Time_Fill2','CURE START POSITION Z Judge Value_Fill2','CURE START POSITION Θ Unit Time_Fill2','CURE START POSITION Θ Judge Value_Fill2','DISCHARGED SPEED OF RESIN Unit Time_Fill2','DISCHARGED SPEED OF RESIN Judge Value_Fill2','DISCHARGED TIME OF RESIN(Stage1) Unit Time_Fill2','DISCHARGED TIME OF RESIN(Stage1) Judge Value_Fill2','DISCHARGED TIME OF RESIN(Stage2) Unit Time_Fill2','DISCHARGED TIME OF RESIN(Stage2) Judge Value_Fill2','DISCHARGED TIME OF RESIN(Stage3) Unit Time_Fill2','DISCHARGED TIME OF RESIN(Stage3) Judge Value_Fill2','Dispense Volume(Stage1) Unit Time_Fill2','Dispense Volume(Stage1) Judge Value_Fill2','Dispense Volume(Stage2) Unit Time_Fill2','Dispense Volume(Stage2) Judge Value_Fill2','Dispense Volume(Stage3) Unit Time_Fill2','Dispense Volume(Stage3) Judge Value_Fill2','HEAD NORMAL COORDINATE X AXIS(Stage1) Unit Time_Fill2','HEAD NORMAL COORDINATE X AXIS(Stage2) Unit Time_Fill2','HEAD NORMAL COORDINATE X AXIS(Stage2) Judge Value_Fill2','HEAD NORMAL COORDINATE X AXIS(Stage3) Unit Time_Fill2','HEAD NORMAL COORDINATE X AXIS(Stage3) Judge Value_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage1) Unit Time_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage1) Judge Value_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage2) Unit Time_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage2) Judge Value_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage3) Unit Time_Fill2','HEAD NORMAL COORDINATE Y AXIS(Stage3) Judge Value_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage1) Unit Time_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage1) Judge Value_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage2) Unit Time_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage2) Judge Value_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage3) Unit Time_Fill2','HEAD NORMAL COORDINATE Z AXIS(Stage3) Judge Value_Fill2','HEAD Standby Position X Unit Time_Fill2','HEAD Standby Position X Judge Value_Fill2','HEAD Standby Position Y Unit Time_Fill2','HEAD Standby Position Y Judge Value_Fill2',
+        'HEAD Standby Position Z Unit Time_Fill2','HEAD Standby Position Z Judge Value_Fill2','Head Clean Position X Unit Time_Fill2','Head Clean Position X Judge Value_Fill2','Head Clean Position Y Unit Time_Fill2','Head Clean Position Y Judge Value_Fill2','Head Clean Position Z Unit Time_Fill2','Head Clean Position Z Judge Value_Fill2','Head Purge Position X Unit Time_Fill2','Head Purge Position X Judge Value_Fill2','Head Purge Position Y Unit Time_Fill2','Head Purge Position Y Judge Value_Fill2','Head Purge Position Z Unit Time_Fill2','Head Purge Position Z Judge Value_Fill2','Machine Tact time Unit Time_Fill2','Machine Tact time Judge Value_Fill2','PalletID Unit Time_Fill2','PalletID Judge Value_Fill2','Production Qty Unit Time_Fill2','Production Qty Judge Value_Fill2','Receip No Unit Time_Fill2','Receip No Judge Value_Fill2','WorkMode Unit Time_Fill2','WorkMode Judge Value_Fill2'
+    ]
+    df = df.drop(columns=features_02,axis=1)
+
+    # NaN 없이, OK와 NG으로만 이루어진 칼럼 -> 0과 1로 전처리 수행
+    features_03 = [
+        'Chamber Temp. Judge Value_AutoClave'
+    ]
+    df.loc[:,features_03[0]] = df[features_03[0]].apply(lambda x: 1 if x == 'OK' else 0)
+
+    # NaN와 OK으로 이루어진 칼럼 -> 0과 1로 전처리 수행
+    features_04 = [
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Judge Value_Dam',
+        'GMES_ORIGIN_INSP_JUDGE_CODE Collect Result_AutoClave',
+        'GMES_ORIGIN_INSP_JUDGE_CODE Judge Value_AutoClave',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Judge Value_Fill1',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Judge Value_Fill2'
+    ]
+    df[features_04[0]] = df[features_04[0]].fillna(0)
+    df.loc[:,features_04[0]] = df[features_04[0]].apply(lambda x: 1 if x == 'OK' else 0)
+    df['HEAD NORMAL COORDINATE X AXIS(Stage1)'] = df[features_04[0]]
+    df = df.drop(columns=features_04,axis=1)
+
+    return df
+
+#  모든 값이 동일한 컬럼 분석을 반영한 전처리 코드
+def do_data_preprocessing_02(df):
+    features_01 = [
+        'CURE STANDBY POSITION X Collect Result_Dam',
+        'CURE STANDBY POSITION Z Collect Result_Dam',
+        'CURE STANDBY POSITION Θ Collect Result_Dam',
+        'CURE START POSITION Z Collect Result_Dam',
+        'CURE END POSITION Θ Collect Result_Fill2',
+        'CURE STANDBY POSITION X Collect Result_Fill2',
+        'CURE STANDBY POSITION Θ Collect Result_Fill2',
+        'CURE START POSITION Θ Collect Result_Fill2',
+        'DISCHARGED SPEED OF RESIN Collect Result_Fill2',
+        'DISCHARGED TIME OF RESIN(Stage1) Collect Result_Fill2',
+        'DISCHARGED TIME OF RESIN(Stage2) Collect Result_Fill2',
+        'DISCHARGED TIME OF RESIN(Stage3) Collect Result_Fill2',
+        'Dispense Volume(Stage1) Collect Result_Fill2',
+        'Dispense Volume(Stage2) Collect Result_Fill2',
+        'Dispense Volume(Stage3) Collect Result_Fill2'
+    ]
+    df = df.drop(columns=features_01,axis=1)
+    return df
+
+def do_data_preprocessing_04(df):
+    features_01 = [
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Dam',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Fill1',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Fill2'
+    ]
+
+    for feature in features_01:
+        # "OK"를 NaN으로 대체
+        df[feature] = df[feature].replace('OK', np.nan)
+        df[feature] = pd.to_numeric(df[feature], errors='coerce')
+
+        # 중앙값
+        feature_median = df[df['target'] == 1][feature].median()
+
+        display(df.value_counts("target"))
+
+        df[feature] = df[feature].fillna(0)
+
+    return df
+
+def do_data_preprocessing_04_for_test(df):
+    features_01 = [
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Dam',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Fill1',
+        'HEAD NORMAL COORDINATE X AXIS(Stage1) Collect Result_Fill2'
+    ]
+
+    for feature in features_01:
+        # "OK"를 NaN으로 대체
+        df[feature] = df[feature].replace('OK', np.nan)
+        df[feature] = pd.to_numeric(df[feature], errors='coerce')
+
+        # 중앙값
+        feature_median = df[feature].median()
+
+        df[feature] = df[feature].fillna(0)
+
+    return df
+
+train_data = pd.read_csv(os.path.join(ROOT_DIR, "train.csv"))
+train_data['target'] = train_data['target'].apply(lambda x: 1 if x == "AbNormal" else 0)
